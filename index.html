@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeQuest: ¡Programa al Robot!</title>
+    <style>
+        /* --- ESTILOS GENERALES Y RESPONSIVE --- */
+        :root {
+            --primary: #2563eb;
+            --success: #10b981;
+            --dark: #1e293b;
+            --light: #f8fafc;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--light);
+            color: var(--dark);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        header {
+            background: linear-gradient(135deg, #1e3a8a, var(--primary));
+            color: white;
+            text-align: center;
+            padding: 2rem 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        /* Contenedor Principal Adaptable */
+        .main-container {
+            flex: 1;
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        /* Secciones */
+        .panel {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h2 {
+            margin-bottom: 1rem;
+            color: #0f172a;
+            font-size: 1.5rem;
+            width: 100%;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 0.5rem;
+        }
+
+        /* --- TABLERO DEL JUEGO --- */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            max-width: 320px;
+            width: 100%;
+            aspect-ratio: 1;
+            background-color: #cbd5e1;
+            padding: 8px;
+            border-radius: 8px;
+        }
+
+        .cell {
+            background-color: white;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .robot { background-color: #93c5fd; animation: pulse 2s infinite; }
+        .meta { background-color: #a7f3d0; }
+        .obstacle { background-color: #fca5a5; }
+
+        /* --- CONTROLES Y BLOQUES DE CÓDIGO --- */
+        .controls {
+            width: 100%;
+        }
+
+        .btn-group {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 1.5rem;
+            width: 100%;
+        }
+
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 1rem;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:hover { background-color: #1d4ed8; }
+        button:active { transform: scale(0.98); }
+
+        button.action-btn {
+            background-color: var(--success);
+            grid-column: span 3;
+            font-size: 1.2rem;
+            padding: 1rem;
+        }
+        button.action-btn:hover { background-color: #059669; }
+
+        button.clear-btn {
+            background-color: #ef4444;
+            grid-column: span 3;
+        }
+        button.clear-btn:hover { background-color: #dc2626; }
+
+        /* Línea de comandos (Algoritmo) */
+        .algorithm-box {
+            width: 100%;
+            background-color: #1e293b;
+            color: #38bdf8;
+            padding: 1rem;
+            border-radius: 8px;
+            min-height: 120px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            overflow-y: auto;
+        }
+
+        .command-tag {
+            background-color: #334155;
+            color: #f8fafc;
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin: 2px;
+            display: inline-block;
+            border-left: 3px solid #38bdf8;
+        }
+
+        /* --- RESPONSIVE ADAPTATION (MEDIA QUERIES) --- */
+        @media (max-width: 768px) {
+            .main-container {
+                grid-template-columns: 1fr; /* Pasa a una sola columna en celulares */
+                gap: 1.5rem;
+                padding: 1rem;
+            }
+
+            header h1 { font-size: 2rem; }
+            header p { font-size: 1rem; }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(0.95); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>🤖 CodeQuest: Pensamiento Lógico</h1>
+        <p>¡Crea tu algoritmo para guiar al robot hacia la meta verde esquivando el peligro!</p>
+    </header>
+
+    <main class="main-container">
+        
+        <section class="panel">
+            <h2>Mapa del Sistema</h2>
+            <div class="grid" id="grid">
+                </div>
+        </section>
+
+        <section class="panel">
+            <h2>Tu Código (Secuencia)</h2>
+            <div class="algorithm-box" id="algorithm-box">
+                <span id="placeholder-text">// Tu algoritmo aparecerá aquí...</span>
+            </div>
+
+            <div class="controls">
+                <div class="btn-group">
+                    <button onclick="addCommand('⬆️ Avanzar')">⬆️ Avanzar</button>
+                    <button onclick="addCommand('↩️ Giro Izq.')">↩️ Giro Izq.</button>
+                    <button onclick="addCommand('↪️ Giro Der.')">↪️ Giro Der.</button>
+                    
+                    <button class="clear-btn" onclick="clearAlgorithm()">Borrar Todo</button>
+                    <button class="action-btn" onclick="runAlgorithm()">▶️ Ejecutar Algoritmo</button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // --- LÓGICA DEL JUEGO (JAVASCRIPT) ---
+        
+        // Estado del juego
+        // Dirección: 0 = Norte, 1 = Este, 2 = Sur, 3 = Oeste
+        let robotState = { x: 0, y: 3, dir: 0 }; 
+        const meta = { x: 3, y: 0 };
+        const obstacle = { x: 1, y: 1 };
+        
+        let commands = [];
+        const boardSize = 4;
+
+        // Renderizar el tablero inicial
+        function drawBoard() {
+            const gridElement = document.getElementById('grid');
+            gridElement.innerHTML = '';
+
+            for (let y = 0; y < boardSize; y++) {
+                for (let x = 0; x < boardSize; x++) {
+                    const cell = document.createElement('div');
+                    cell.classList.add('cell');
+
+                    if (x === robotState.x && y === robotState.y) {
+                        cell.classList.add('robot');
+                        cell.innerText = getRobotIcon();
+                    } else if (x === meta.x && y === meta.metaY || (x === meta.x && y === meta.y)) {
+                        cell.classList.add('meta');
+                        cell.innerText = '🏁';
+                    } else if (x === obstacle.x && y === obstacle.y) {
+                        cell.classList.add('obstacle');
+                        cell.innerText = '💥';
+                    }
+
+                    gridElement.appendChild(cell);
+                }
+            }
+        }
+
+        function getRobotIcon() {
+            // Cambia el icono según hacia dónde mire el robot
+            switch(robotState.dir) {
+                case 0: return '🤖⬆️';
+                case 1: return '🤖➡️';
+                case 2: return '🤖⬇️';
+                case 3: return '🤖⬅';
+            }
+        }
+
+        // Agregar comandos al bloque de código
+        function addCommand(cmd) {
+            document.getElementById('placeholder-text').style.display = 'none';
+            commands.push(cmd);
+            
+            const box = document.getElementById('algorithm-box');
+            const tag = document.createElement('span');
+            tag.classList.add('command-tag');
+            tag.innerText = cmd;
+            box.appendChild(tag);
+        }
+
+        // Limpiar comandos
+        function clearAlgorithm() {
+            commands = [];
+            document.getElementById('algorithm-box').innerHTML = '<span id="placeholder-text">// Tu algoritmo aparecerá aquí...</span>';
+            resetRobot();
+        }
+
+        function resetRobot() {
+            robotState = { x: 0, y: 3, dir: 0 };
+            drawBoard();
+        }
+
+        // Ejecutar los comandos de manera secuencial (Concepto clave de programación)
+        async function runAlgorithm() {
+            if (commands.length === 0) {
+                alert("¡Primero añade algunas instrucciones a tu código!");
+                return;
+            }
+
+            resetRobot();
+            
+            for (let cmd of commands) {
+                // Esperar 600ms entre pasos para que el estudiante vea la secuencia
+                await new Promise(resolve => setTimeout(resolve, 600));
+
+                if (cmd === '⬆️ Avanzar') {
+                    if (robotState.dir === 0 && robotState.y > 0) robotState.y--;
+                    else if (robotState.dir === 1 && robotState.x < boardSize - 1) robotState.x++;
+                    else if (robotState.dir === 2 && robotState.y < boardSize - 1) robotState.y++;
+                    else if (robotState.dir === 3 && robotState.x > 0) robotState.x--;
+                } else if (cmd === '↩️ Giro Izq.') {
+                    robotState.dir = (robotState.dir + 3) % 4;
+                } else if (cmd === '↪️ Giro Der.') {
+                    robotState.dir = (robotState.dir + 1) % 4;
+                }
+
+                drawBoard();
+
+                // Verificar colisión con obstáculo
+                if (robotState.x === obstacle.x && robotState.y === obstacle.y) {
+                    alert("💥 ¡Oh no! El robot chocó contra el obstáculo. Revisa tu algoritmo.");
+                    return;
+                }
+            }
+
+            // Verificar si llegó a la meta al terminar la secuencia
+            if (robotState.x === meta.x && robotState.y === meta.y) {
+                alert("🎉 ¡Felicidades! Lograste resolver el problema usando lógica de programación.");
+            } else {
+                alert("🏁 El robot se detuvo, pero no llegó a la meta. ¡Sigue intentándolo!");
+            }
+        }
+
+        // Inicializar juego al cargar la página
+        drawBoard();
+    </script>
+</body>
+</html>
